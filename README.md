@@ -1,7 +1,7 @@
 wikiquotes-api
 ==============
 
-Javascript module for retrieving quotes from wikiquotes.org via api calls
+Javascript module for retrieving quotes from wikiquotes.org via api calls. [See it in action!](http://natetyler.github.io)
 
 #### queryTitles(titles, success, error)
 Query based on "titles" parameter and return page id. If multiple page ids are returned, choose the first one. Query includes "redirects" option to automatically traverse redirects. All words will be capitalized as this generally yields more consistent results.
