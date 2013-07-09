@@ -2,10 +2,10 @@ var WikiquoteApi = (function() {
 
   var wqa = {};
 
-  var QUERY_URL = "http://en.wikiquote.org/w/api.php?format=json&action=query&redirects&titles=";
-  var PARSE_SECTIONS_URL = "http://en.wikiquote.org/w/api.php?format=json&action=parse&prop=sections&pageid=";
-  var PARSE_TEXT_URL = "http://en.wikiquote.org/w/api.php?format=json&action=parse&noimages&pageid=";
-  var JSONP_SUFFIX = "&callback=?";
+  var QUERY_URL = "http://en.wikiquote.org/w/api.php";
+  var PARSE_SECTIONS_URL = "http://en.wikiquote.org/w/api.php";
+  var PARSE_TEXT_URL = "http://en.wikiquote.org/w/api.php";
+  
 
   /**
    * Query based on "titles" parameter and return page id.
@@ -15,8 +15,14 @@ var WikiquoteApi = (function() {
    */
   wqa.queryTitles = function(titles, success, error) {
     $.ajax({
-      url: QUERY_URL + wqa.capitalizeString(titles) + JSONP_SUFFIX,
+      url: QUERY_URL,
       dataType: "jsonp",
+      data: {
+        format: "json",
+        action: "query",
+        redirects: "",
+        titles: titles
+      },
 
       success: function(result, status) {
         var pages = result.query.pages;
@@ -50,8 +56,14 @@ var WikiquoteApi = (function() {
    */
   wqa.getSectionsForPage = function(pageId, success, error) {
     $.ajax({
-      url: PARSE_SECTIONS_URL + pageId + JSONP_SUFFIX,
+      url: PARSE_SECTIONS_URL,
       dataType: "jsonp",
+      data: {
+        format: "json",
+        action: "parse",
+        prop: "sections",
+        pageid: pageId
+      },
 
       success: function(result, status){
         var sectionArray = [];
@@ -95,8 +107,15 @@ var WikiquoteApi = (function() {
    */
   wqa.getQuotesForSection = function(pageId, sectionIndex, success, error) {
     $.ajax({
-      url: PARSE_TEXT_URL + pageId + "&section=" + sectionIndex + JSONP_SUFFIX,
+      url: PARSE_TEXT_URL,
       dataType: "jsonp",
+      data: {
+        format: "json",
+        action: "parse",
+        noimages: "",
+        pageid: pageId,
+        section: sectionIndex
+      },
 
       success: function(result, status){
         var quotes = result.parse.text["*"];
