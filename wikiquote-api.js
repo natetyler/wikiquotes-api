@@ -2,10 +2,7 @@ var WikiquoteApi = (function() {
 
   var wqa = {};
 
-  var QUERY_URL = "http://en.wikiquote.org/w/api.php";
-  var PARSE_SECTIONS_URL = "http://en.wikiquote.org/w/api.php";
-  var PARSE_TEXT_URL = "http://en.wikiquote.org/w/api.php";
-  
+  var API_URL = "http://en.wikiquote.org/w/api.php";
 
   /**
    * Query based on "titles" parameter and return page id.
@@ -15,7 +12,7 @@ var WikiquoteApi = (function() {
    */
   wqa.queryTitles = function(titles, success, error) {
     $.ajax({
-      url: QUERY_URL,
+      url: API_URL,
       dataType: "jsonp",
       data: {
         format: "json",
@@ -52,11 +49,12 @@ var WikiquoteApi = (function() {
    * Get the sections for a given page.
    * This makes parsing for quotes more manageable.
    * Returns an array of all "1.x" sections as these usually contain the quotes.
-   * If no 1.x sections exists, returns section 1.
+   * If no 1.x sections exists, returns section 1. Returns the titles that were used
+   * in case there is a redirect.
    */
   wqa.getSectionsForPage = function(pageId, success, error) {
     $.ajax({
-      url: PARSE_SECTIONS_URL,
+      url: API_URL,
       dataType: "jsonp",
       data: {
         format: "json",
@@ -78,7 +76,7 @@ var WikiquoteApi = (function() {
         if(sectionArray.length == 0) {
           sectionArray.push("1");
         }
-        success(sectionArray);
+        success({ titles: result.parse.title, sections: sectionArray });
       },
       error: function(xhr, result, status){
         error("Error getting sections");
@@ -103,11 +101,12 @@ var WikiquoteApi = (function() {
    *
    * For quotes with bold sections, only the bold part is returned for brevity
    * (usually the bold part is more well known).
-   * Otherwise the entire text is returned.
+   * Otherwise the entire text is returned.  Returns the titles that were used
+   * in case there is a redirect.
    */
   wqa.getQuotesForSection = function(pageId, sectionIndex, success, error) {
     $.ajax({
-      url: PARSE_TEXT_URL,
+      url: API_URL,
       dataType: "jsonp",
       data: {
         format: "json",
@@ -135,7 +134,7 @@ var WikiquoteApi = (function() {
             quoteArray.push($(this).html());
           }
         });
-        success(quoteArray);
+        success({ titles: result.parse.title, quotes: quoteArray });
       },
       error: function(xhr, result, status){
         error("Error getting quotes");
@@ -144,10 +143,35 @@ var WikiquoteApi = (function() {
   };
 
   /**
+   * Search using opensearch api.  Returns an array of search results.
+   */
+  wqa.openSearch = function(titles, success, error) {
+    $.ajax({
+      url: API_URL,
+      dataType: "jsonp",
+      data: {
+        format: "json",
+        action: "opensearch",
+        namespace: 0,
+        suggest: "",
+        search: titles
+      },
+
+      success: function(result, status){
+        success(result[1]);
+      },
+      error: function(xhr, result, status){
+        error("Error with opensearch for " + titles);
+      }
+    });
+  };
+
+  /**
    * Get a random quote for the given title search.
    * This function searches for a page id for the given title, chooses a random
    * section from the list of sections for the page, and then chooses a random
-   * quote from that section.
+   * quote from that section.  Returns the titles that were used in case there
+   * is a redirect.
    */
   wqa.getRandomQuote = function(titles, success, error) {
 
@@ -155,14 +179,14 @@ var WikiquoteApi = (function() {
       error(msg);
     };
 
-    var chooseQuote = function(quoteArray) {
-      var randomNum = Math.floor(Math.random()*quoteArray.length);
-      success(quoteArray[randomNum]);
+    var chooseQuote = function(quotes) {
+      var randomNum = Math.floor(Math.random()*quotes.quotes.length);
+      success({ titles: quotes.titles, quote: quotes.quotes[randomNum] });
     };
 
     var getQuotes = function(pageId, sections) {
-      var randomNum = Math.floor(Math.random()*sections.length);
-      wqa.getQuotesForSection(pageId, sections[randomNum], chooseQuote, errorFunction);
+      var randomNum = Math.floor(Math.random()*sections.sections.length);
+      wqa.getQuotesForSection(pageId, sections.sections[randomNum], chooseQuote, errorFunction);
     };
 
     var getSections = function(pageId) {
