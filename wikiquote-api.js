@@ -68,12 +68,12 @@ var WikiquoteApi = (function() {
         var sections = result.parse.sections;
         for(var s in sections) {
           var splitNum = sections[s].number.split('.');
-          if(splitNum.length > 1 && splitNum[0] == "1") {
+          if(splitNum.length > 1 && splitNum[0] === "1") {
             sectionArray.push(sections[s].index);
           }
         }
         // Use section 1 if there are no "1.x" sections
-        if(sectionArray.length == 0) {
+        if(sectionArray.length === 0) {
           sectionArray.push("1");
         }
         success({ titles: result.parse.title, sections: sectionArray });
