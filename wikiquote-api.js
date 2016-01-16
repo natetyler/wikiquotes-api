@@ -45,7 +45,7 @@ var WikiquoteApi = (function() {
     });
   };
 
-  wqa.queryRandomTitle = function(lists, namespaces, success, error) {
+  wqa.queryRandomTitle = function(success, error) {
     $.ajax({
       url: API_URL,
       dataType: "jsonp",
