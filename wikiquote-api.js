@@ -45,6 +45,33 @@ var WikiquoteApi = (function() {
     });
   };
 
+  wqa.queryRandomTitle = function(lists, namespaces, success, error) {
+    $.ajax({
+      url: API_URL,
+      dataType: "jsonp",
+      data: {
+        format: "json",
+        action: "query",
+        redirects: "",
+        list: "random",
+        rnnamespace: "0"
+      },
+
+      success: function(result, status) {
+        var title = result.query.random[0].title;
+        if(title != undefined) {
+          success(title);
+        } else {
+          error("No results");
+        }
+      },
+
+      error: function(xhr, result, status){
+        error("Error processing your query");
+      }
+    });
+  };
+  
   /**
    * Get the sections for a given page.
    * This makes parsing for quotes more manageable.
@@ -195,6 +222,12 @@ var WikiquoteApi = (function() {
 
     wqa.queryTitles(titles, getSections, errorFunction);
   };
+
+  wqa.getCompletelyRandomQuote = function(success, error) {
+      wqa.queryRandomTitle(function(title) {
+          wqa.getRandomQuote(title, success, error);
+      }, error);
+  }
 
   /**
    * Capitalize the first letter of each word
