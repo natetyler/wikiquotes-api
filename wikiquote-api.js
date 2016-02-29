@@ -59,7 +59,7 @@ var WikiquoteApi = (function() {
 
       success: function(result, status) {
         var title = result.query.random[0].title;
-        if(!title) {
+        if(title) {
           success(title);
         } else {
           error("No results");
