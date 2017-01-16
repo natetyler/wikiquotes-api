@@ -45,6 +45,33 @@ var WikiquoteApi = (function() {
     });
   };
 
+  wqa.queryRandomTitle = function(success, error) {
+    $.ajax({
+      url: API_URL,
+      dataType: "jsonp",
+      data: {
+        format: "json",
+        action: "query",
+        redirects: "",
+        list: "random",
+        rnnamespace: "0"
+      },
+
+      success: function(result, status) {
+        var title = result.query.random[0].title;
+        if(title) {
+          success(title);
+        } else {
+          error("No results");
+        }
+      },
+
+      error: function(xhr, result, status){
+        error("Error processing your query");
+      }
+    });
+  };
+  
   /**
    * Get the sections for a given page.
    * This makes parsing for quotes more manageable.
@@ -117,8 +144,9 @@ var WikiquoteApi = (function() {
       },
 
       success: function(result, status){
+      	if (!result.parse) return error("Error getting quotes");
         var quotes = result.parse.text["*"];
-        var quoteArray = []
+        var quoteArray = [];
 
         // Find top level <li> only
         var $lis = $(quotes).find('li:not(li li)');
@@ -230,13 +258,19 @@ var WikiquoteApi = (function() {
     wqa.queryTitles(titles, getSections, errorFunction);
   };
 
+  wqa.getCompletelyRandomQuote = function(success, error) {
+      wqa.queryRandomTitle(function(title) {
+          wqa.getRandomQuote(title, success, error);
+      }, error);
+  };
+
   /**
    * Capitalize the first letter of each word
    */
   wqa.capitalizeString = function(input) {
     var inputArray = input.split(' ');
     var output = [];
-    for(s in inputArray) {
+    for(var s in inputArray) {
       output.push(inputArray[s].charAt(0).toUpperCase() + inputArray[s].slice(1));
     }
     return output.join(' ');
