@@ -123,15 +123,21 @@ var WikiquoteApi = (function() {
         // Find top level <li> only
         var $lis = $(quotes).find('li:not(li li)');
         $lis.each(function() {
+          // Get attribution if there's any
+          var attr = "";
+          if ($(this).find('ul:first')) {
+            attr = $(this).find('ul:first').text();
+          }
+          
           // Remove all children that aren't <b>
           $(this).children().remove(':not(b)');
           var $bolds = $(this).find('b');
 
           // If the section has bold text, use it.  Otherwise pull the plain text.
           if($bolds.length > 0) {
-            quoteArray.push($bolds.html());
+            quoteArray.push($bolds.html() + " ~" + attr);
           } else {
-            quoteArray.push($(this).html());
+            quoteArray.push($(this).html() + " ~" + attr);
           }
         });
         success({ titles: result.parse.title, quotes: quoteArray });
