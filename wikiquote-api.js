@@ -1,8 +1,20 @@
+
+
+
 var WikiquoteApi = (function() {
 
   var wqa = {};
 
   var API_URL = "https://en.wikiquote.org/w/api.php";
+  
+  /**
+   * This is used enough in this api that it makes sense to make
+   * a private function
+   */
+  
+  var randInt = function(maxVal){
+   return Math.floor(Math.random() * maxVal); 
+  }
 
   /**
    * Query based on "titles" parameter and return page id.
@@ -207,19 +219,19 @@ var WikiquoteApi = (function() {
    * quote from that section.  Returns the titles that were used in case there
    * is a redirect.
    */
-  wqa.getRandomQuote = function(titles, success, error) {
+  wqa.getRandomQuoteFromTitle = function(titles, success, error) {
 
     var errorFunction = function(msg) {
       error(msg);
     };
 
     var chooseQuote = function(quotes) {
-      var randomNum = Math.floor(Math.random()*quotes.quotes.length);
+      var randomNum = randInt(quotes.quotes.length);
       success({ titles: quotes.titles, quote: quotes.quotes[randomNum] });
     };
 
     var getQuotes = function(pageId, sections) {
-      var randomNum = Math.floor(Math.random()*sections.sections.length);
+      var randomNum = randInt(sections.sections.length);
       wqa.getQuotesForSection(pageId, sections.sections[randomNum], chooseQuote, errorFunction);
     };
 
@@ -229,6 +241,102 @@ var WikiquoteApi = (function() {
 
     wqa.queryTitles(titles, getSections, errorFunction);
   };
+	
+  /**
+   *Get a random quote from wikiquotes
+  */
+  
+  wqa.getRandomQuote = function(success, error){
+    var errorFunction = function(msg){
+      error(msg); 
+    };
+    
+    var chooseQuote = function(titles){
+      wqa.getRandomQuoteFromTitle(titles, success, errorFunction);
+    }
+    
+    var getRandTitle = function(pageId){
+      wqa.getRandomTitle(pageId, chooseQuote, errorFunction);
+    }
+    
+    var getPageId = function(title){
+      wqa.queryTitles(title, getRandTitle, errorFunction);
+    }
+    
+    wqa.getRandomListOfPeople(getPageId, errorFunction);
+        
+    
+  };
+  
+  /**
+   * Pulls a random name from one of the alphabetically ordered
+   * lists of people on wikiquotes.
+   * @param: pageID: REQUIRED to be one of the pages with the
+   *                 alphabetically ordered lists of names
+   */
+  
+  wqa.getRandomTitle = function(pageId, success, error){
+    $.ajax({
+      url: API_URL,
+      dataType: "jsonp",
+      data: {
+        format: "json",
+        action: "parse",
+        prop: "links",
+        pageid:pageId
+      },
+      
+      success: function(result, status){
+        var links = result.parse.links;
+        /*Links still contains the links to the other list of names
+          and we want to avoid these, so we filter them out */
+        var exception = "List of";
+        links = links.filter(function(i){
+          return !i["*"].includes(exception);
+        });
+        var randomNum = randInt(links.length);
+        var link = links[randomNum]["*"];
+        success(link);
+      }
+    });
+  };
+  
+  
+  /**
+   * Makes it possible to pull a random name in getRandomQuote
+   * Chooses a list of people from which to pull the random person
+   */
+  wqa.getRandomListOfPeople = function(success, error){
+    console.log("here");
+    $.ajax({
+      url: API_URL,
+      dataType: "jsonp",
+      data: {
+        format: "json",
+        action: "parse",
+        prop: "links",
+        pageid:"94" //the pageid for the list of sections of names
+      },
+
+      success: function(result, status){
+        var links = result.parse.links;
+        var exception = "Category";
+        links = links.filter(function(i){
+          return !i["*"].includes(exception);
+        });
+        var randomNum = randInt(links.length);
+        var link = links[randomNum]["*"];
+        //Some links will have a "-" and others won't
+        //this means some will need a redirect and others wouldn't, which causes problems
+        //in getRandomTitle. Solution is to HTML-ify "-"
+        link = link.replace("-", "\u2013"); 
+        success(link);
+      },
+      error: function(xhr, result, status){
+        error("Error obtaining the link for a random list of names: " + status);
+      }
+    });
+  }
 
   /**
    * Capitalize the first letter of each word
@@ -241,6 +349,8 @@ var WikiquoteApi = (function() {
     }
     return output.join(' ');
   };
+    
+  
 
   return wqa;
 }());
