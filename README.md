@@ -26,8 +26,11 @@ The quote may or may not contain sections inside `<b />` tags.
 
 For quotes with bold sections, only the bold part is returned for brevity (usually the bold part is more well known). Otherwise the entire text is returned. Returns the titles that were used in case there is a redirect.
 
-#### getRandomQuote(titles, success, error)
+#### getRandomQuoteFromTitle(titles, success, error)
 Get a random quote for the given title search. This function searches for a page id for the given title, chooses a random section from the list of sections for the page, and then chooses a random quote from that section. Returns the titles that were used in case there is a redirect.
+
+#### getRandomQuote(success, error)
+Get a random quote from a random person. This function calls getRandomListOfPeople to choose one of the lists of alphabetically ordered names on wikiquotes. This page queried for its pageid, which is sent to getRandomTitle, which chooses a random name from the list retrieved by getRandomListOfPeople. This name is then sent to getRandomQuoteFromTitle.
 
 #### openSearch(titles, success, error)
 Search using opensearch api.  Returns an array of search results.
