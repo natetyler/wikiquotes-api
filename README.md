@@ -29,6 +29,9 @@ For quotes with bold sections, only the bold part is returned for brevity (usual
 #### getRandomQuote(titles, success, error)
 Get a random quote for the given title search. This function searches for a page id for the given title, chooses a random section from the list of sections for the page, and then chooses a random quote from that section. Returns the titles that were used in case there is a redirect.
 
+#### getRandomPageAndQuote(success, error)
+Get random article page and return a random quote from it. Please note: there are sometimes random pages without quotes in them like [this one](https://en.wikiquote.org/wiki/26), so take care to call getRandomPageAndQuote again from Your error function if this is the case.
+
 #### openSearch(titles, success, error)
 Search using opensearch api.  Returns an array of search results.
 

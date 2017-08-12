@@ -88,7 +88,7 @@ var WikiquoteApi = (function() {
    * Get all quotes for a given section.  Most sections will be of the format:
    * <h3> title </h3>
    * <ul>
-   *   <li> 
+   *   <li>
    *     Quote text
    *     <ul>
    *       <li> additional info on the quote </li>
@@ -117,6 +117,11 @@ var WikiquoteApi = (function() {
       },
 
       success: function(result, status){
+        // there are sometimes semi-empty pages:
+        if (typeof result.parse === 'undefined') {
+          error(JSON.stringify(result));
+          return;
+        }
         var quotes = result.parse.text["*"];
         var quoteArray = []
 
@@ -129,9 +134,9 @@ var WikiquoteApi = (function() {
 
           // If the section has bold text, use it.  Otherwise pull the plain text.
           if($bolds.length > 0) {
-            quoteArray.push($bolds.html());
+            quoteArray.push($bolds.text());
           } else {
-            quoteArray.push($(this).html());
+            quoteArray.push($(this).text());
           }
         });
         success({ titles: result.parse.title, quotes: quoteArray });
@@ -141,7 +146,7 @@ var WikiquoteApi = (function() {
       }
     });
   };
-  
+
   /**
    * Get Wikipedia page for specific section
    * Usually section 0 includes personal Wikipedia page link
@@ -159,7 +164,7 @@ var WikiquoteApi = (function() {
       },
 
       success: function(result, status){
-		
+
         var wikilink;
 		console.log('what is iwlink:'+result.parse.iwlinks);
 		var iwl = result.parse.iwlinks;
@@ -207,40 +212,88 @@ var WikiquoteApi = (function() {
    * quote from that section.  Returns the titles that were used in case there
    * is a redirect.
    */
-  wqa.getRandomQuote = function(titles, success, error) {
+   wqa.getRandomQuote = function(titles, success, error) {
 
-    var errorFunction = function(msg) {
-      error(msg);
-    };
+     var errorFunction = function(msg) {
+       error(msg);
+     };
 
-    var chooseQuote = function(quotes) {
-      var randomNum = Math.floor(Math.random()*quotes.quotes.length);
-      success({ titles: quotes.titles, quote: quotes.quotes[randomNum] });
-    };
+     wqa.queryTitles(titles, function(pageId) {wqa.getRandomQuoteByPageId(pageId, success, error)}, errorFunction);
 
-    var getQuotes = function(pageId, sections) {
-      var randomNum = Math.floor(Math.random()*sections.sections.length);
-      wqa.getQuotesForSection(pageId, sections.sections[randomNum], chooseQuote, errorFunction);
-    };
+   };
 
-    var getSections = function(pageId) {
-      wqa.getSectionsForPage(pageId, function(sections) { getQuotes(pageId, sections); }, errorFunction);
-    };
+   /**
+   * Given a page id choose and show random quote from it
+   */
+   wqa.getRandomQuoteByPageId = function(pageId, success, error) {
 
-    wqa.queryTitles(titles, getSections, errorFunction);
-  };
+     var errorFunction = function(msg) {
+       error(msg);
+     };
 
-  /**
+     var chooseQuote = function(quotes) {
+       // no quotes found
+       if (typeof quotes.quotes === 'undefined') {
+         error(JSON.stringify(quotes));
+         return;
+       }
+       var randomNum = Math.floor(Math.random()*quotes.quotes.length);
+       success({ titles: quotes.titles, quote: quotes.quotes[randomNum] });
+     };
+
+     var getQuotes = function(pageId, sections) {
+       var randomNum = Math.floor(Math.random()*sections.sections.length);
+       wqa.getQuotesForSection(pageId, sections.sections[randomNum], chooseQuote, errorFunction);
+     };
+
+     wqa.getSectionsForPage(pageId, function(sections) { getQuotes(pageId, sections); }, errorFunction);
+   }
+
+   /**
+    * Get random article page.
+    * Returns its id.
+    */
+   wqa.getRandomPageId = function(success, error) {
+
+     $.ajax({
+       url: API_URL,
+       dataType: "jsonp",
+       data: {
+         action: "query",
+         format: "json",
+         list: "random",
+         rnnamespace: "0",  // random articles
+       },
+
+       success: function(result, status) {
+         success(result.query.random[0].id);
+       },
+
+       error: function(xhr, result, status){
+         error("Error with getting random page");
+       }
+     });
+
+   };
+
+   /**
+    * Get random article page and return a random quote from it.
+    */
+   wqa.getRandomPageAndQuote = function(success, error) {
+     wqa.getRandomPageId(function(pageId) {wqa.getRandomQuoteByPageId(pageId,success,error)},error);
+   }
+
+   /**
    * Capitalize the first letter of each word
    */
-  wqa.capitalizeString = function(input) {
+   wqa.capitalizeString = function(input) {
     var inputArray = input.split(' ');
     var output = [];
     for(s in inputArray) {
       output.push(inputArray[s].charAt(0).toUpperCase() + inputArray[s].slice(1));
     }
     return output.join(' ');
-  };
+   };
 
-  return wqa;
-}());
+   return wqa;
+   }());
